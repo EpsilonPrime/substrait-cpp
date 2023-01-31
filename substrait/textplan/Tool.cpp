@@ -16,15 +16,11 @@ void convertJSONToText(const char* filename) {
 } // namespace io::substrait
 
 int main(int argc, char* argv[]) {
-  int c;
-  int digit_optind = 0;
-
   while (true) {
-    int this_option_optind = optind ? optind : 1;
     int option_index = 0;
-    static struct option long_options[] = {{0, 0, 0, 0}};
+    static struct option long_options[] = {{nullptr, 0, nullptr, 0}};
 
-    c = getopt_long(argc, argv, "abc:d:012", long_options, &option_index);
+    int c = getopt_long(argc, argv, "", long_options, &option_index);
     if (c == -1)
       break;
   }
@@ -34,10 +30,10 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  while (optind < argc) {
-    const char* filename = argv[optind++];
-    printf("===== %s =====\n", filename);
-    io::substrait::convertJSONToText(filename);
+  int curr_arg = optind;
+  for (; curr_arg < argc; curr_arg++) {
+    printf("===== %s =====\n", argv[curr_arg]);
+    io::substrait::convertJSONToText(argv[curr_arg]);
   }
 
   return EXIT_SUCCESS;
