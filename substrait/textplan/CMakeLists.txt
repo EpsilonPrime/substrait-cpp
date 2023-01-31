@@ -13,3 +13,9 @@ target_link_libraries(
 if (${BUILD_TESTING})
     add_subdirectory(tests)
 endif ()
+
+add_executable(planconverter Tool.cpp)
+
+target_link_libraries(
+        planconverter
+        substrait_textplan)

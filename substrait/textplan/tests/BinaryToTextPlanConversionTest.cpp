@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 #include "substrait/plan.pb.h"
 
-namespace substrait {
+namespace io::substrait {
 namespace {
 
 class BinaryToTextPlanConversionTest : public ::testing::Test {
@@ -44,7 +44,7 @@ TEST_F(BinaryToTextPlanConversionTest, Something2) {
 
   std::string s = converter.toString();
   // ASSERT_THAT(s, ::testing::HasSubstr("23"));
-  std::cout << s;
+  std::cout << s;  // Output a readable version for playing with.
   ASSERT_THAT(
       s,
       ::testing::Eq(

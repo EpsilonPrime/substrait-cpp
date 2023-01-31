@@ -1,19 +1,3 @@
-/*
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 #include <fstream>
 #include <iterator>
 #include <sstream>
@@ -30,7 +14,7 @@
 #include "substrait/common/Exceptions.h"
 #include "substrait/plan.pb.h"
 
-namespace substrait {
+namespace io::substrait {
 namespace {
 
 std::string shortName(std::string str) {
@@ -75,7 +59,7 @@ void PlanConverter::loadFromBinary(const std::string& blob) {
   SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
 }
 
-std::string PlanConverter::functionsToText(const substrait::Plan& plan) {
+std::string PlanConverter::functionsToText(const ::substrait::Plan& plan) {
   std::string text;
   // MEGAHACK -- Deal with grouping extensions by extension space
   // (extension_uri_reference).
@@ -90,8 +74,8 @@ std::string PlanConverter::functionsToText(const substrait::Plan& plan) {
   std::sort(
       extensions.begin(),
       extensions.end(),
-      [](const substrait::extensions::SimpleExtensionDeclaration& a,
-         const substrait::extensions::SimpleExtensionDeclaration& b) {
+      [](const ::substrait::extensions::SimpleExtensionDeclaration& a,
+         const ::substrait::extensions::SimpleExtensionDeclaration& b) {
         return a.extension_function().function_anchor() <
             b.extension_function().function_anchor();
       });
@@ -104,7 +88,7 @@ std::string PlanConverter::functionsToText(const substrait::Plan& plan) {
         unique_name,
         Location(),
         SymbolType::kFunction,
-        substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+        ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
         ext);
   }
   text += "}\n";
@@ -112,22 +96,22 @@ std::string PlanConverter::functionsToText(const substrait::Plan& plan) {
 }
 
 std::string PlanConverter::extractLocalFile(
-    const substrait::ReadRel::LocalFiles::FileOrFiles& item) {
+    const ::substrait::ReadRel::LocalFiles::FileOrFiles& item) {
   std::string text;
   switch (item.path_type_case()) {
-    case substrait::ReadRel::LocalFiles::FileOrFiles::kUriPath:
+    case ::substrait::ReadRel::LocalFiles::FileOrFiles::kUriPath:
       text += "uri_path: \"" + item.uri_path() + "\"";
       break;
-    case substrait::ReadRel::LocalFiles::FileOrFiles::kUriPathGlob:
+    case ::substrait::ReadRel::LocalFiles::FileOrFiles::kUriPathGlob:
       text += "uri_path_glob: \"" + item.uri_path_glob() + "\"";
       break;
-    case substrait::ReadRel::LocalFiles::FileOrFiles::kUriFile:
+    case ::substrait::ReadRel::LocalFiles::FileOrFiles::kUriFile:
       text += "uri_file: \"" + item.uri_file() + "\"";
       break;
-    case substrait::ReadRel::LocalFiles::FileOrFiles::kUriFolder:
+    case ::substrait::ReadRel::LocalFiles::FileOrFiles::kUriFolder:
       text += "uri_folder: \"" + item.uri_folder() + "\"";
       break;
-    case substrait::ReadRel::LocalFiles::FileOrFiles::PATH_TYPE_NOT_SET:
+    case ::substrait::ReadRel::LocalFiles::FileOrFiles::PATH_TYPE_NOT_SET:
     default:
       SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
       return "";
@@ -142,22 +126,22 @@ std::string PlanConverter::extractLocalFile(
     text += " length: " + std::to_string(item.length());
   }
   switch (item.file_format_case()) {
-    case substrait::ReadRel::LocalFiles::FileOrFiles::kParquet:
+    case ::substrait::ReadRel::LocalFiles::FileOrFiles::kParquet:
       text += " parquest: {}";
       break;
-    case substrait::ReadRel::LocalFiles::FileOrFiles::kArrow:
+    case ::substrait::ReadRel::LocalFiles::FileOrFiles::kArrow:
       text += " arrow: {}";
       break;
-    case substrait::ReadRel::LocalFiles::FileOrFiles::kOrc:
+    case ::substrait::ReadRel::LocalFiles::FileOrFiles::kOrc:
       text += " orc: {}";
       break;
-    case substrait::ReadRel::LocalFiles::FileOrFiles::kExtension:
+    case ::substrait::ReadRel::LocalFiles::FileOrFiles::kExtension:
       SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
       return "";
-    case substrait::ReadRel::LocalFiles::FileOrFiles::kDwrf:
+    case ::substrait::ReadRel::LocalFiles::FileOrFiles::kDwrf:
       text += " dwrf: {}";
       break;
-    case substrait::ReadRel::LocalFiles::FileOrFiles::FILE_FORMAT_NOT_SET:
+    case ::substrait::ReadRel::LocalFiles::FileOrFiles::FILE_FORMAT_NOT_SET:
     default:
       SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
       return "";
@@ -165,15 +149,15 @@ std::string PlanConverter::extractLocalFile(
   return text;
 }
 
-std::string PlanConverter::extractReadType(const substrait::ReadRel& relation) {
+std::string PlanConverter::extractReadType(const ::substrait::ReadRel& relation) {
   switch (relation.read_type_case()) {
-    case substrait::ReadRel::kLocalFiles: {
+    case ::substrait::ReadRel::kLocalFiles: {
       const auto& unique_name = symbol_table_.getUniqueName("local");
       symbol_table_.defineSymbol(
           unique_name,
           Location(),
           SymbolType::kSource,
-          substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+          ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
           relation);
       std::string text = "source local_files " + unique_name + " {\n";
       text += "  items = [\n";
@@ -185,69 +169,69 @@ std::string PlanConverter::extractReadType(const substrait::ReadRel& relation) {
       // MEGAHACK -- Add support for advanced extensions.
       return text;
   }
-  case substrait::ReadRel::kVirtualTable:
+  case ::substrait::ReadRel::kVirtualTable:
     SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
-  case substrait::ReadRel::kNamedTable:
+  case ::substrait::ReadRel::kNamedTable:
     SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
-  case substrait::ReadRel::kExtensionTable:
+  case ::substrait::ReadRel::kExtensionTable:
     SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
-  case substrait::ReadRel::READ_TYPE_NOT_SET:
+  case ::substrait::ReadRel::READ_TYPE_NOT_SET:
   default:
     return "";
 }
 }
 
-std::string PlanConverter::extractSources(const substrait::Rel& relation) {
+std::string PlanConverter::extractSources(const ::substrait::Rel& relation) {
   switch (relation.rel_type_case()) {
-    case substrait::Rel::RelTypeCase::kRead:
+    case ::substrait::Rel::RelTypeCase::kRead:
       return extractReadType(relation.read());
-    case substrait::Rel::RelTypeCase::kFilter:
+    case ::substrait::Rel::RelTypeCase::kFilter:
       return extractSources(relation.filter().input());
-    case substrait::Rel::RelTypeCase::kFetch:
+    case ::substrait::Rel::RelTypeCase::kFetch:
       return extractSources(relation.fetch().input());
-    case substrait::Rel::RelTypeCase::kAggregate:
+    case ::substrait::Rel::RelTypeCase::kAggregate:
       return extractSources(relation.aggregate().input());
-    case substrait::Rel::RelTypeCase::kSort:
+    case ::substrait::Rel::RelTypeCase::kSort:
       return extractSources(relation.sort().input());
-    case substrait::Rel::RelTypeCase::kJoin:
+    case ::substrait::Rel::RelTypeCase::kJoin:
       return extractSources(relation.join().left()) +
           extractSources(relation.join().right());
-    case substrait::Rel::RelTypeCase::kProject:
+    case ::substrait::Rel::RelTypeCase::kProject:
       return extractSources(relation.project().input());
-    case substrait::Rel::RelTypeCase::kSet: {
+    case ::substrait::Rel::RelTypeCase::kSet: {
       std::string text;
       for (const auto& rel : relation.set().inputs()) {
         text += extractSources(rel);
       }
       return text;
     }
-    case substrait::Rel::RelTypeCase::kExtensionSingle:
+    case ::substrait::Rel::RelTypeCase::kExtensionSingle:
       return extractSources(relation.extension_single().input());
-    case substrait::Rel::RelTypeCase::kExtensionMulti: {
+    case ::substrait::Rel::RelTypeCase::kExtensionMulti: {
       std::string text;
       for (const auto& rel : relation.extension_multi().inputs()) {
         text += extractSources(rel);
       }
       return text;
     }
-    case substrait::Rel::RelTypeCase::kExtensionLeaf:
+    case ::substrait::Rel::RelTypeCase::kExtensionLeaf:
       return "";
-    case substrait::Rel::RelTypeCase::kCross:
+    case ::substrait::Rel::RelTypeCase::kCross:
       return extractSources(relation.cross().left()) +
           extractSources(relation.cross().right());
 #if 0
-    case substrait::Rel::RelTypeCase::kHashJoin:
+    case ::substrait::Rel::RelTypeCase::kHashJoin:
       return extractSources(relation.hash_join().left()) + extractSources(relation.hash_join().right());
-    case substrait::Rel::RelTypeCase::kMergeJoin:
+    case ::substrait::Rel::RelTypeCase::kMergeJoin:
       return extractSources(relation.merge_join().left()) + extractSources(relation.merge_join().right());
 #endif
-    case substrait::Rel::REL_TYPE_NOT_SET:
+    case ::substrait::Rel::REL_TYPE_NOT_SET:
     default:
       return "";
   }
 }
 
-std::string PlanConverter::extractSources(const substrait::PlanRel& relation) {
+std::string PlanConverter::extractSources(const ::substrait::PlanRel& relation) {
   // MEGAHACK -- Use rel_type_case here.
   if (relation.has_root()) {
     return extractSources(relation.root().input());
@@ -290,7 +274,7 @@ std::string PipelineCollector::toString() {
   return text;
 }
 
-std::string PlanConverter::sourcesToText(const substrait::Plan& plan) {
+std::string PlanConverter::sourcesToText(const ::substrait::Plan& plan) {
   std::string text;
   for (const auto& relation : plan.relations()) {
     text += extractSources(relation);
@@ -301,7 +285,7 @@ std::string PlanConverter::sourcesToText(const substrait::Plan& plan) {
 std::string PlanConverter::schemaToText(const SymbolInfo& info) {
   std::string text;
   if (info.blob.has_value()) {
-    const auto& schema = std::any_cast<substrait::NamedStruct>(info.blob);
+    const auto& schema = std::any_cast<::substrait::NamedStruct>(info.blob);
     text += "schema " + info.name + " {\n";
     int name_idx = 0;
     int types_idx = 0;
@@ -310,7 +294,7 @@ std::string PlanConverter::schemaToText(const SymbolInfo& info) {
       text += "  " + schema.names(name_idx);
       // Interpret the type.
       if (schema.struct_().types(types_idx).kind_case() ==
-          substrait::Type::kFp64) {
+          ::substrait::Type::kFp64) {
         if (schema.struct_().types(types_idx).fp64().nullability()) {
           text += " nullable";
         }
@@ -325,7 +309,7 @@ std::string PlanConverter::schemaToText(const SymbolInfo& info) {
           info.name,
           Location(),
           SymbolType::kField,
-          substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+          ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
           schema);
     }
     text += "}\n";
@@ -346,23 +330,23 @@ std::string PlanConverter::schemasToText() {
 }
 
 std::string PlanConverter::literalToText(
-    const substrait::Expression::Literal& literal) {
+    const ::substrait::Expression::Literal& literal) {
   switch (literal.literal_type_case()) {
-    case substrait::Expression::Literal::kBoolean:
+    case ::substrait::Expression::Literal::kBoolean:
       return std::to_string(literal.boolean());
-    case substrait::Expression::Literal::kI8:
+    case ::substrait::Expression::Literal::kI8:
       return std::to_string(literal.i8());
-    case substrait::Expression::Literal::kI16:
+    case ::substrait::Expression::Literal::kI16:
       return std::to_string(literal.i16());
-    case substrait::Expression::Literal::kI32:
+    case ::substrait::Expression::Literal::kI32:
       return std::to_string(literal.i32());
-    case substrait::Expression::Literal::kI64:
+    case ::substrait::Expression::Literal::kI64:
       return std::to_string(literal.i64());
-    case substrait::Expression::Literal::kFp32:
+    case ::substrait::Expression::Literal::kFp32:
       return std::to_string(literal.fp32());
-    case substrait::Expression::Literal::kFp64:
+    case ::substrait::Expression::Literal::kFp64:
       return std::to_string(literal.fp64());
-    case substrait::Expression::Literal::kString:
+    case ::substrait::Expression::Literal::kString:
       return "\"" + literal.string() + "\""; // MEGAHACK -- Deal with escapes.
     default:
       return "UNSUPPORTED_LITERAL_TYPE";
@@ -370,9 +354,9 @@ std::string PlanConverter::literalToText(
 };
 
 std::string PlanConverter::fieldReferenceToText(
-    const substrait::Expression::FieldReference& ref) {
+    const ::substrait::Expression::FieldReference& ref) {
   switch (ref.reference_type_case()) {
-    case substrait::Expression::FieldReference::kDirectReference: {
+    case ::substrait::Expression::FieldReference::kDirectReference: {
       auto field = symbol_table_.nthSymbolByType(
           ref.direct_reference().struct_field().field(), SymbolType::kField);
       if (field != nullptr) {
@@ -382,46 +366,46 @@ std::string PlanConverter::fieldReferenceToText(
             std::to_string(ref.direct_reference().struct_field().field());
       }
     }
-    case substrait::Expression::FieldReference::kMaskedReference:
+    case ::substrait::Expression::FieldReference::kMaskedReference:
       return "MASKED_REF_NOT_SUPPORTED";
-    case substrait::Expression::FieldReference::REFERENCE_TYPE_NOT_SET:
+    case ::substrait::Expression::FieldReference::REFERENCE_TYPE_NOT_SET:
     default:
       return "";
   }
 }
 
-std::string PlanConverter::typeToText(const substrait::Type& type) {
+std::string PlanConverter::typeToText(const ::substrait::Type& type) {
   switch (type.kind_case()) {
-    case substrait::Type::kBool:
-      if (type.bool_().nullability() == Type::NULLABILITY_NULLABLE)
+    case ::substrait::Type::kBool:
+      if (type.bool_().nullability() == ::substrait::Type::NULLABILITY_NULLABLE)
         return "opt_bool";
       return "bool";
-    case substrait::Type::kI8:
-      if (type.i8().nullability() == Type::NULLABILITY_NULLABLE)
+    case ::substrait::Type::kI8:
+      if (type.i8().nullability() == ::substrait::Type::NULLABILITY_NULLABLE)
         return "opt_i8";
       return "i8";
-    case substrait::Type::kI16:
-      if (type.i16().nullability() == Type::NULLABILITY_NULLABLE)
+    case ::substrait::Type::kI16:
+      if (type.i16().nullability() == ::substrait::Type::NULLABILITY_NULLABLE)
         return "opt_i16";
       return "i16";
-    case substrait::Type::kI32:
-      if (type.i32().nullability() == Type::NULLABILITY_NULLABLE)
+    case ::substrait::Type::kI32:
+      if (type.i32().nullability() == ::substrait::Type::NULLABILITY_NULLABLE)
         return "opt_i32";
       return "i32";
-    case substrait::Type::kI64:
-      if (type.i64().nullability() == Type::NULLABILITY_NULLABLE)
+    case ::substrait::Type::kI64:
+      if (type.i64().nullability() == ::substrait::Type::NULLABILITY_NULLABLE)
         return "opt_i64";
       return "i64";
-    case substrait::Type::kFp32:
-      if (type.fp32().nullability() == Type::NULLABILITY_NULLABLE)
+    case ::substrait::Type::kFp32:
+      if (type.fp32().nullability() == ::substrait::Type::NULLABILITY_NULLABLE)
         return "opt_fp32";
       return "fp32";
-    case substrait::Type::kFp64:
-      if (type.fp64().nullability() == Type::NULLABILITY_NULLABLE)
+    case ::substrait::Type::kFp64:
+      if (type.fp64().nullability() == ::substrait::Type::NULLABILITY_NULLABLE)
         return "opt_fp64";
       return "fp64";
-    case substrait::Type::kString:
-      if (type.string().nullability() == Type::NULLABILITY_NULLABLE)
+    case ::substrait::Type::kString:
+      if (type.string().nullability() == ::substrait::Type::NULLABILITY_NULLABLE)
         return "opt_string";
       return "string";
     default:
@@ -430,7 +414,7 @@ std::string PlanConverter::typeToText(const substrait::Type& type) {
 };
 
 std::string PlanConverter::scalarFunctionToText(
-    const substrait::Expression::ScalarFunction& function) {
+    const ::substrait::Expression::ScalarFunction& function) {
   std::string text;
   auto func = symbol_table_.nthSymbolByType(
       function.function_reference(), SymbolType::kFunction);
@@ -446,16 +430,16 @@ std::string PlanConverter::scalarFunctionToText(
     if (!first)
       text += ", ";
     switch (arg.arg_type_case()) {
-      case substrait::FunctionArgument::kEnum:
+      case ::substrait::FunctionArgument::kEnum:
         text += "ENUM_NOT_SUPPORTED";
         break;
-      case substrait::FunctionArgument::kType:
+      case ::substrait::FunctionArgument::kType:
         text += typeToText(arg.type());
         break;
-      case substrait::FunctionArgument::kValue:
+      case ::substrait::FunctionArgument::kValue:
         text += expressionToText(arg.value());
         break;
-      case substrait::FunctionArgument::ARG_TYPE_NOT_SET:
+      case ::substrait::FunctionArgument::ARG_TYPE_NOT_SET:
       default:
         text += "UNKNOWN_ARGUMENT_TYPE";
         break;
@@ -477,19 +461,19 @@ std::string PlanConverter::scalarFunctionToText(
   return text;
 };
 
-std::string PlanConverter::expressionToText(const substrait::Expression& exp) {
+std::string PlanConverter::expressionToText(const ::substrait::Expression& exp) {
   std::string text;
   switch (exp.rex_type_case()) {
-    case substrait::Expression::kLiteral:
+    case ::substrait::Expression::kLiteral:
       text += literalToText(exp.literal());
       break;
-    case substrait::Expression::kSelection:
+    case ::substrait::Expression::kSelection:
       text += fieldReferenceToText(exp.selection());
       break;
-    case substrait::Expression::kScalarFunction:
+    case ::substrait::Expression::kScalarFunction:
       text += scalarFunctionToText(exp.scalar_function());
       break;
-    case substrait::Expression::REX_TYPE_NOT_SET:
+    case ::substrait::Expression::REX_TYPE_NOT_SET:
       break;
     default:
       text += "UNSUPPORTED_EXPRESSION_TYPE(" +
@@ -502,7 +486,7 @@ std::string PlanConverter::expressionToText(const substrait::Expression& exp) {
 }
 
 std::string PlanConverter::aggregateFunctionToText(
-    const substrait::AggregateFunction& function) {
+    const ::substrait::AggregateFunction& function) {
   std::string text;
   auto func = symbol_table_.nthSymbolByType(
       function.function_reference(), SymbolType::kFunction);
@@ -517,16 +501,16 @@ std::string PlanConverter::aggregateFunctionToText(
     if (!first)
       text += ", ";
     switch (arg.arg_type_case()) {
-      case substrait::FunctionArgument::kEnum:
+      case ::substrait::FunctionArgument::kEnum:
         text += "ENUM_NOT_SUPPORTED";
         break;
-      case substrait::FunctionArgument::kType:
+      case ::substrait::FunctionArgument::kType:
         text += typeToText(arg.type());
         break;
-      case substrait::FunctionArgument::kValue:
+      case ::substrait::FunctionArgument::kValue:
         text += expressionToText(arg.value());
         break;
-      case substrait::FunctionArgument::ARG_TYPE_NOT_SET:
+      case ::substrait::FunctionArgument::ARG_TYPE_NOT_SET:
       default:
         text += "UNKNOWN_ARGUMENT_TYPE";
         break;
@@ -550,13 +534,13 @@ std::string PlanConverter::aggregateFunctionToText(
 #endif
   text += "->" + typeToText(function.output_type());
   // MEGAHACK -- Handle sorts here.
-  text += "@" + substrait::AggregationPhase_Name(function.phase());
+  text += "@" + ::substrait::AggregationPhase_Name(function.phase());
   return text;
 }
 
 std::string PlanConverter::readRelationToText(
     const SymbolInfo& parent,
-    const substrait::ReadRel& rel) {
+    const ::substrait::ReadRel& rel) {
   std::string text;
   if (rel.has_base_schema()) {
     const std::string& name = symbol_table_.getUniqueName("schema");
@@ -564,7 +548,7 @@ std::string PlanConverter::readRelationToText(
         name,
         parent.location,
         SymbolType::kSchema,
-        substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+        ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
         rel.base_schema());
     text += "  base_schema " + name + ";\n";
   }
@@ -579,7 +563,7 @@ std::string PlanConverter::readRelationToText(
 }
 
 std::string PlanConverter::filterRelationToText(
-    const substrait::FilterRel& rel) {
+    const ::substrait::FilterRel& rel) {
   std::string text;
   if (rel.has_condition()) {
     text += "  condition " + expressionToText(rel.condition()) + ";\n";
@@ -588,7 +572,7 @@ std::string PlanConverter::filterRelationToText(
 }
 
 std::string PlanConverter::aggregateRelationToText(
-    const substrait::AggregateRel& rel) {
+    const ::substrait::AggregateRel& rel) {
   std::string text;
   for (const auto& group : rel.groupings()) {
     for (const auto& expr : group.grouping_expressions()) {
@@ -609,7 +593,7 @@ std::string PlanConverter::aggregateRelationToText(
 }
 
 std::string PlanConverter::projectRelationToText(
-    const substrait::ProjectRel& rel) {
+    const ::substrait::ProjectRel& rel) {
   std::string text;
   for (const auto& expr : rel.expressions()) {
     text += "  expression " + expressionToText(expr) + ";\n";
@@ -624,21 +608,21 @@ std::string PlanConverter::relationToText(const SymbolInfo& info) {
   std::string text;
   text += "relation " + info.name + " {\n";
 
-  const auto& rel = std::any_cast<substrait::Rel>(info.blob);
+  const auto& rel = std::any_cast<::substrait::Rel>(info.blob);
   switch (rel.rel_type_case()) {
-    case substrait::Rel::RelTypeCase::kRead:
+    case ::substrait::Rel::RelTypeCase::kRead:
       text += readRelationToText(info, rel.read());
       break;
-    case substrait::Rel::RelTypeCase::kFilter:
+    case ::substrait::Rel::RelTypeCase::kFilter:
       text += filterRelationToText(rel.filter());
       break;
-    case substrait::Rel::RelTypeCase::kAggregate:
+    case ::substrait::Rel::RelTypeCase::kAggregate:
       text += aggregateRelationToText(rel.aggregate());
       break;
-    case substrait::Rel::RelTypeCase::kProject:
+    case ::substrait::Rel::RelTypeCase::kProject:
       text += projectRelationToText(rel.project());
       break;
-    case substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET:
+    case ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET:
     default:
       break;
   }
@@ -666,27 +650,27 @@ std::string PlanConverter::relationsToText() {
 // MEGAHACK -- The location for the symbol table should probably be the path
 // without the field.
 #define VISIT_LEAF(type, name)                             \
-  case substrait::Rel::RelTypeCase::type: {                \
+  case ::substrait::Rel::RelTypeCase::type: {                \
     auto unique_name = symbol_table_.getUniqueName(#name); \
     pipeline->add(unique_name);                            \
     symbol_table_.defineSymbol(                            \
         unique_name,                                       \
         location,                                          \
         SymbolType::kRelation,                             \
-        substrait::Rel::RelTypeCase::type,                 \
+        ::substrait::Rel::RelTypeCase::type,                 \
         relation);                                         \
     break;                                                 \
   }
 
 #define VISIT_SINGLE(type, name)                                              \
-  case substrait::Rel::RelTypeCase::type: {                                   \
+  case ::substrait::Rel::RelTypeCase::type: {                                   \
     auto unique_name = symbol_table_.getUniqueName(#name);                    \
     pipeline->add(unique_name);                                               \
     symbol_table_.defineSymbol(                                               \
         unique_name,                                                          \
         location,                                                             \
         SymbolType::kRelation,                                                \
-        substrait::Rel::RelTypeCase::type,                                    \
+        ::substrait::Rel::RelTypeCase::type,                                    \
         relation);                                                            \
     visitPipelines(                                                           \
         relation.name().input(), collector, location.visit(#name), pipeline); \
@@ -694,14 +678,14 @@ std::string PlanConverter::relationsToText() {
   }
 
 #define VISIT_DOUBLE(type, name)                           \
-  case substrait::Rel::RelTypeCase::type: {                \
+  case ::substrait::Rel::RelTypeCase::type: {                \
     auto unique_name = symbol_table_.getUniqueName(#name); \
     pipeline->add(unique_name);                            \
     symbol_table_.defineSymbol(                            \
         unique_name,                                       \
         location,                                          \
         SymbolType::kRelation,                             \
-        substrait::Rel::RelTypeCase::type,                 \
+        ::substrait::Rel::RelTypeCase::type,                 \
         relation);                                         \
     auto new_loc = location.visit(#name);                  \
     visitPipelines(                                        \
@@ -718,14 +702,14 @@ std::string PlanConverter::relationsToText() {
   }
 
 #define VISIT_MULTIPLE(type, name)                                          \
-  case substrait::Rel::RelTypeCase::type: {                                 \
+  case ::substrait::Rel::RelTypeCase::type: {                                 \
     auto unique_name = symbol_table_.getUniqueName(#name);                  \
     pipeline->add(unique_name);                                             \
     symbol_table_.defineSymbol(                                             \
         unique_name,                                                        \
         location,                                                           \
         SymbolType::kRelation,                                              \
-        substrait::Rel::RelTypeCase::type,                                  \
+        ::substrait::Rel::RelTypeCase::type,                                  \
         relation);                                                          \
     auto new_loc = location.visit(#name);                                   \
     for (const auto& rel : relation.name().inputs()) {                      \
@@ -735,7 +719,7 @@ std::string PlanConverter::relationsToText() {
   }
 
 void PlanConverter::visitPipelines(
-    const substrait::Rel& relation,
+    const ::substrait::Rel& relation,
     PipelineCollector* collector,
     const Location& location,
     Pipeline* pipeline) {
@@ -756,7 +740,7 @@ void PlanConverter::visitPipelines(
     VISIT_DOUBLE(kHashJoin, hash_join);
     VISIT_DOUBLE(kMergeJoin, merge_join);
 #endif
-    case substrait::Rel::REL_TYPE_NOT_SET:
+    case ::substrait::Rel::REL_TYPE_NOT_SET:
     default:
       break;
   }
@@ -768,11 +752,11 @@ void PlanConverter::visitPipelines(
 #undef VISIT_MULTIPLE
 
 void PlanConverter::visitPipelines(
-    const substrait::PlanRel& relation,
+    const ::substrait::PlanRel& relation,
     PipelineCollector* collector) {
   Location location;
   switch (relation.rel_type_case()) {
-    case substrait::PlanRel::kRoot: {
+    case ::substrait::PlanRel::kRoot: {
       // MEGAHACK -- Figure out whether this "node" should be listed as being
       // part of the pipeline.
       auto unique_name = symbol_table_.getUniqueName("root");
@@ -780,7 +764,7 @@ void PlanConverter::visitPipelines(
           unique_name,
           location,
           SymbolType::kPlanRelation,
-          substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+          ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
           relation);
       visitPipelines(
           relation.root().input(),
@@ -789,7 +773,7 @@ void PlanConverter::visitPipelines(
           collector->add(unique_name));
       break;
     }
-    case substrait::PlanRel::kRel: {
+    case ::substrait::PlanRel::kRel: {
       // MEGAHACK -- Figure out whether this "node" should be listed as being
       // part of the pipeline.
       auto unique_name = symbol_table_.getUniqueName("rel");
@@ -797,7 +781,7 @@ void PlanConverter::visitPipelines(
           unique_name,
           location,
           SymbolType::kPlanRelation,
-          substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+          ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
           relation);
       visitPipelines(
           relation.rel(),
@@ -806,13 +790,13 @@ void PlanConverter::visitPipelines(
           collector->add(unique_name));
       break;
     }
-    case substrait::PlanRel::REL_TYPE_NOT_SET:
+    case ::substrait::PlanRel::REL_TYPE_NOT_SET:
     default:
       return;
   }
 }
 
-std::string PlanConverter::pipelinesToText(const substrait::Plan& plan) {
+std::string PlanConverter::pipelinesToText(const ::substrait::Plan& plan) {
   PipelineCollector collector;
   for (const auto& relation : plan.relations()) {
     visitPipelines(relation, &collector);

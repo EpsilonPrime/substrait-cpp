@@ -22,7 +22,7 @@
 
 #include <google/protobuf/util/json_util.h>
 
-namespace substrait {
+namespace io::substrait {
 
 // Utility function to read a JSON file from disk.
 // MEGAHACK -- Move elsewhere.
@@ -59,7 +59,7 @@ class PlanConverter {
   }
 
   // MEGAHACK -- Consider creating a version that does not require a copy.
-  explicit PlanConverter(const substrait::Plan& plan) {
+  explicit PlanConverter(const ::substrait::Plan& plan) {
     plan_ = plan;
     initialized_ = true;
   }
@@ -80,7 +80,7 @@ class PlanConverter {
   std::string toString();
 
   // Returns a reference to the internal plan.
-  const substrait::Plan& plan() {
+  const ::substrait::Plan& plan() {
     return plan_;
   }
 
@@ -91,49 +91,49 @@ class PlanConverter {
 
  private:
   bool initialized_;
-  substrait::Plan plan_;
+  ::substrait::Plan plan_;
   SymbolTable symbol_table_;
 
-  std::string functionsToText(const substrait::Plan& plan);
-  std::string sourcesToText(const substrait::Plan& plan);
+  std::string functionsToText(const ::substrait::Plan& plan);
+  std::string sourcesToText(const ::substrait::Plan& plan);
   std::string schemasToText();
   std::string relationsToText();
-  std::string pipelinesToText(const substrait::Plan& plan);
+  std::string pipelinesToText(const ::substrait::Plan& plan);
 
   std::string schemaToText(const SymbolInfo& info);
   std::string readRelationToText(
       const SymbolInfo& parent,
-      const substrait::ReadRel& rel);
-  std::string filterRelationToText(const substrait::FilterRel& rel);
-  std::string aggregateRelationToText(const substrait::AggregateRel& rel);
-  std::string projectRelationToText(const substrait::ProjectRel& rel);
+      const ::substrait::ReadRel& rel);
+  std::string filterRelationToText(const ::substrait::FilterRel& rel);
+  std::string aggregateRelationToText(const ::substrait::AggregateRel& rel);
+  std::string projectRelationToText(const ::substrait::ProjectRel& rel);
   std::string relationToText(const SymbolInfo& info);
 
-  std::string expressionToText(const substrait::Expression& exp);
+  std::string expressionToText(const ::substrait::Expression& exp);
   std::string aggregateFunctionToText(
-      const substrait::AggregateFunction& function);
+      const ::substrait::AggregateFunction& function);
   static std::string literalToText(
-      const substrait::Expression::Literal& literal);
+      const ::substrait::Expression::Literal& literal);
   std::string fieldReferenceToText(
-      const substrait::Expression::FieldReference& ref);
-  static std::string typeToText(const substrait::Type& type);
+      const ::substrait::Expression::FieldReference& ref);
+  static std::string typeToText(const ::substrait::Type& type);
   std::string scalarFunctionToText(
-      const substrait::Expression::ScalarFunction& function);
+      const ::substrait::Expression::ScalarFunction& function);
 
   std::string extractLocalFile(
-      const substrait::ReadRel::LocalFiles::FileOrFiles& item);
-  std::string extractReadType(const substrait::ReadRel& relation);
-  std::string extractSources(const substrait::Rel& relation);
-  std::string extractSources(const substrait::PlanRel& relation);
+      const ::substrait::ReadRel::LocalFiles::FileOrFiles& item);
+  std::string extractReadType(const ::substrait::ReadRel& relation);
+  std::string extractSources(const ::substrait::Rel& relation);
+  std::string extractSources(const ::substrait::PlanRel& relation);
 
   void visitPipelines(
-      const substrait::Rel& relation,
+      const ::substrait::Rel& relation,
       PipelineCollector* collector,
       const Location& location,
       Pipeline* pipeline);
 
   void visitPipelines(
-      const substrait::PlanRel& relation,
+      const ::substrait::PlanRel& relation,
       PipelineCollector* collector);
 };
 
