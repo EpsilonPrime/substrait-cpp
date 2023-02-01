@@ -52,11 +52,11 @@ void PlanConverter::loadFromJSON(const std::string& json) {
 }
 
 void PlanConverter::loadFromText(const std::string& text) {
-  SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
+  SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented #1.");
 }
 
 void PlanConverter::loadFromBinary(const std::string& blob) {
-  SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
+  SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented #2.");
 }
 
 std::string PlanConverter::functionsToText(const ::substrait::Plan& plan) {
@@ -113,7 +113,7 @@ std::string PlanConverter::extractLocalFile(
       break;
     case ::substrait::ReadRel::LocalFiles::FileOrFiles::PATH_TYPE_NOT_SET:
     default:
-      SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
+      SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented #3.");
       return "";
   }
   if (item.partition_index() != 0) {
@@ -136,14 +136,14 @@ std::string PlanConverter::extractLocalFile(
       text += " orc: {}";
       break;
     case ::substrait::ReadRel::LocalFiles::FileOrFiles::kExtension:
-      SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
+      SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented #4.");
       return "";
     case ::substrait::ReadRel::LocalFiles::FileOrFiles::kDwrf:
       text += " dwrf: {}";
       break;
     case ::substrait::ReadRel::LocalFiles::FileOrFiles::FILE_FORMAT_NOT_SET:
     default:
-      SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
+      SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented #5.");
       return "";
   }
   return text;
@@ -170,11 +170,27 @@ std::string PlanConverter::extractReadType(const ::substrait::ReadRel& relation)
       return text;
   }
   case ::substrait::ReadRel::kVirtualTable:
-    SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
-  case ::substrait::ReadRel::kNamedTable:
-    SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
+    SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented #6.");
+  case ::substrait::ReadRel::kNamedTable: {
+    const auto& unique_name = symbol_table_.getUniqueName("named");
+    symbol_table_.defineSymbol(
+        unique_name,
+        Location(),
+        SymbolType::kSource,
+        ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+        relation);
+    std::string text = "source named_table " + unique_name + " {\n";
+    text += "  names = [\n";
+    for (const auto& name : relation.named_table().names()) {
+        text += "    \"" + name + "\",\n";
+    }
+    text += "  ]\n";
+    text += "}\n";
+    // MEGAHACK -- Add support for advanced extensions.
+    return text;
+  }
   case ::substrait::ReadRel::kExtensionTable:
-    SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
+    SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented #8.");
   case ::substrait::ReadRel::READ_TYPE_NOT_SET:
   default:
     return "";
@@ -290,16 +306,7 @@ std::string PlanConverter::schemaToText(const SymbolInfo& info) {
     while (name_idx < schema.names_size() &&
            types_idx < schema.struct_().types_size()) {
       text += "  " + schema.names(name_idx);
-      // Interpret the type.
-      if (schema.struct_().types(types_idx).kind_case() ==
-          ::substrait::Type::kFp64) {
-        if (schema.struct_().types(types_idx).fp64().nullability()) {
-          text += " nullable";
-        }
-        text += " fp64";
-      } else {
-        text += " UNKNOWN";
-      }
+      text += " " + typeToText(schema.struct_().types(types_idx));
       text += ";\n";
       ++name_idx;
       ++types_idx;
@@ -439,7 +446,7 @@ std::string PlanConverter::scalarFunctionToText(
         break;
       case ::substrait::FunctionArgument::ARG_TYPE_NOT_SET:
       default:
-        text += "UNKNOWN_ARGUMENT_TYPE";
+        text += "UNKNOWN_SCALAR_FUNCTION_ARGUMENT_TYPE";
         break;
     }
     first = false;
@@ -450,7 +457,9 @@ std::string PlanConverter::scalarFunctionToText(
     text += expressionToText(arg);
     first = false;
   }
-  text += "->" + typeToText(function.output_type());
+  // MEGAHACK -- Do we need the output type?
+  // text += "->" + typeToText(function.output_type());
+
   // if (first) {
   //   // Had nothing, debug.
   //   text += "MEGAHACK: " + function.ShortDebugString();
@@ -510,7 +519,7 @@ std::string PlanConverter::aggregateFunctionToText(
         break;
       case ::substrait::FunctionArgument::ARG_TYPE_NOT_SET:
       default:
-        text += "UNKNOWN_ARGUMENT_TYPE";
+        text += "UNKNOWN_AGGREGATE_FUNCTION_ARGUMENT_TYPE";
         break;
     }
     first = false;
