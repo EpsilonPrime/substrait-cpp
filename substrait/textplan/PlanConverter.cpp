@@ -149,7 +149,8 @@ std::string PlanConverter::extractLocalFile(
   return text;
 }
 
-std::string PlanConverter::extractReadType(const ::substrait::ReadRel& relation) {
+std::string PlanConverter::extractReadType(
+    const ::substrait::ReadRel& relation) {
   switch (relation.read_type_case()) {
     case ::substrait::ReadRel::kLocalFiles: {
       const auto& unique_name = symbol_table_.getUniqueName("local");
@@ -157,6 +158,7 @@ std::string PlanConverter::extractReadType(const ::substrait::ReadRel& relation)
           unique_name,
           Location(),
           SymbolType::kSource,
+          // MEGAHACK -- Could store a subtype appropriate to the main type.
           ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
           relation);
       std::string text = "source local_files " + unique_name + " {\n";
@@ -168,33 +170,32 @@ std::string PlanConverter::extractReadType(const ::substrait::ReadRel& relation)
       text += "}\n";
       // MEGAHACK -- Add support for advanced extensions.
       return text;
-  }
-  case ::substrait::ReadRel::kVirtualTable:
-    SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented #6.");
-  case ::substrait::ReadRel::kNamedTable: {
-    const auto& unique_name = symbol_table_.getUniqueName("named");
-    symbol_table_.defineSymbol(
-        unique_name,
-        Location(),
-        SymbolType::kSource,
-        ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
-        relation);
-    std::string text = "source named_table " + unique_name + " {\n";
-    text += "  names = [\n";
-    for (const auto& name : relation.named_table().names()) {
-        text += "    \"" + name + "\",\n";
     }
-    text += "  ]\n";
-    text += "}\n";
-    // MEGAHACK -- Add support for advanced extensions.
-    return text;
+    case ::substrait::ReadRel::kVirtualTable:
+      SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented #6.");
+    case ::substrait::ReadRel::kNamedTable: {
+      const auto& unique_name = symbol_table_.getUniqueName("named");
+      symbol_table_.defineSymbol(
+          unique_name,
+          Location(),
+          SymbolType::kSource,
+          ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+          relation);
+      std::string text = "source named_table " + unique_name + " {\n";
+      text += "  names = [\n";
+      for (const auto& name : relation.named_table().names()) {
+        text += "    \"" + name + "\",\n";
+      }
+      text += "  ]\n";
+      text += "}\n";
+      // MEGAHACK -- Add support for advanced extensions.
+      return text;
+    }
+    case ::substrait::ReadRel::kExtensionTable:
+      SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented #8.");
+    case ::substrait::ReadRel::READ_TYPE_NOT_SET:
+      return "";
   }
-  case ::substrait::ReadRel::kExtensionTable:
-    SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented #8.");
-  case ::substrait::ReadRel::READ_TYPE_NOT_SET:
-  default:
-    return "";
-}
 }
 
 std::string PlanConverter::extractSources(const ::substrait::Rel& relation) {
@@ -236,16 +237,19 @@ std::string PlanConverter::extractSources(const ::substrait::Rel& relation) {
       return extractSources(relation.cross().left()) +
           extractSources(relation.cross().right());
     case ::substrait::Rel::RelTypeCase::kHashJoin:
-      return extractSources(relation.hash_join().left()) + extractSources(relation.hash_join().right());
+      return extractSources(relation.hash_join().left()) +
+          extractSources(relation.hash_join().right());
     case ::substrait::Rel::RelTypeCase::kMergeJoin:
-      return extractSources(relation.merge_join().left()) + extractSources(relation.merge_join().right());
+      return extractSources(relation.merge_join().left()) +
+          extractSources(relation.merge_join().right());
     case ::substrait::Rel::REL_TYPE_NOT_SET:
     default:
       return "";
   }
 }
 
-std::string PlanConverter::extractSources(const ::substrait::PlanRel& relation) {
+std::string PlanConverter::extractSources(
+    const ::substrait::PlanRel& relation) {
   // MEGAHACK -- Use rel_type_case here.
   if (relation.has_root()) {
     return extractSources(relation.root().input());
@@ -410,7 +414,8 @@ std::string PlanConverter::typeToText(const ::substrait::Type& type) {
         return "opt_fp64";
       return "fp64";
     case ::substrait::Type::kString:
-      if (type.string().nullability() == ::substrait::Type::NULLABILITY_NULLABLE)
+      if (type.string().nullability() ==
+          ::substrait::Type::NULLABILITY_NULLABLE)
         return "opt_string";
       return "string";
     default:
@@ -468,7 +473,8 @@ std::string PlanConverter::scalarFunctionToText(
   return text;
 };
 
-std::string PlanConverter::expressionToText(const ::substrait::Expression& exp) {
+std::string PlanConverter::expressionToText(
+    const ::substrait::Expression& exp) {
   std::string text;
   switch (exp.rex_type_case()) {
     case ::substrait::Expression::kLiteral:
@@ -655,27 +661,27 @@ std::string PlanConverter::relationsToText() {
 // MEGAHACK -- The location for the symbol table should probably be the path
 // without the field.
 #define VISIT_LEAF(type, name)                             \
-  case ::substrait::Rel::RelTypeCase::type: {                \
+  case ::substrait::Rel::RelTypeCase::type: {              \
     auto unique_name = symbol_table_.getUniqueName(#name); \
     pipeline->add(unique_name);                            \
     symbol_table_.defineSymbol(                            \
         unique_name,                                       \
         location,                                          \
         SymbolType::kRelation,                             \
-        ::substrait::Rel::RelTypeCase::type,                 \
+        ::substrait::Rel::RelTypeCase::type,               \
         relation);                                         \
     break;                                                 \
   }
 
 #define VISIT_SINGLE(type, name)                                              \
-  case ::substrait::Rel::RelTypeCase::type: {                                   \
+  case ::substrait::Rel::RelTypeCase::type: {                                 \
     auto unique_name = symbol_table_.getUniqueName(#name);                    \
     pipeline->add(unique_name);                                               \
     symbol_table_.defineSymbol(                                               \
         unique_name,                                                          \
         location,                                                             \
         SymbolType::kRelation,                                                \
-        ::substrait::Rel::RelTypeCase::type,                                    \
+        ::substrait::Rel::RelTypeCase::type,                                  \
         relation);                                                            \
     visitPipelines(                                                           \
         relation.name().input(), collector, location.visit(#name), pipeline); \
@@ -683,14 +689,14 @@ std::string PlanConverter::relationsToText() {
   }
 
 #define VISIT_DOUBLE(type, name)                           \
-  case ::substrait::Rel::RelTypeCase::type: {                \
+  case ::substrait::Rel::RelTypeCase::type: {              \
     auto unique_name = symbol_table_.getUniqueName(#name); \
     pipeline->add(unique_name);                            \
     symbol_table_.defineSymbol(                            \
         unique_name,                                       \
         location,                                          \
         SymbolType::kRelation,                             \
-        ::substrait::Rel::RelTypeCase::type,                 \
+        ::substrait::Rel::RelTypeCase::type,               \
         relation);                                         \
     auto new_loc = location.visit(#name);                  \
     visitPipelines(                                        \
@@ -707,14 +713,14 @@ std::string PlanConverter::relationsToText() {
   }
 
 #define VISIT_MULTIPLE(type, name)                                          \
-  case ::substrait::Rel::RelTypeCase::type: {                                 \
+  case ::substrait::Rel::RelTypeCase::type: {                               \
     auto unique_name = symbol_table_.getUniqueName(#name);                  \
     pipeline->add(unique_name);                                             \
     symbol_table_.defineSymbol(                                             \
         unique_name,                                                        \
         location,                                                           \
         SymbolType::kRelation,                                              \
-        ::substrait::Rel::RelTypeCase::type,                                  \
+        ::substrait::Rel::RelTypeCase::type,                                \
         relation);                                                          \
     auto new_loc = location.visit(#name);                                   \
     for (const auto& rel : relation.name().inputs()) {                      \
@@ -834,4 +840,4 @@ std::string PlanConverter::toString() {
   return text;
 }
 
-} // namespace substrait
+} // namespace io::substrait
