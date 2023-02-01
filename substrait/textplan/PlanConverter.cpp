@@ -219,12 +219,10 @@ std::string PlanConverter::extractSources(const ::substrait::Rel& relation) {
     case ::substrait::Rel::RelTypeCase::kCross:
       return extractSources(relation.cross().left()) +
           extractSources(relation.cross().right());
-#if 0
     case ::substrait::Rel::RelTypeCase::kHashJoin:
       return extractSources(relation.hash_join().left()) + extractSources(relation.hash_join().right());
     case ::substrait::Rel::RelTypeCase::kMergeJoin:
       return extractSources(relation.merge_join().left()) + extractSources(relation.merge_join().right());
-#endif
     case ::substrait::Rel::REL_TYPE_NOT_SET:
     default:
       return "";
@@ -524,14 +522,12 @@ std::string PlanConverter::aggregateFunctionToText(
     first = false;
   }
   text += ")";
-#if 0
   for (const auto& option : function.options()) {
     text += "#" + option.name();
     for (const auto& pref : option.preference()) {
       text += ";" + pref;
     }
   }
-#endif
   text += "->" + typeToText(function.output_type());
   // MEGAHACK -- Handle sorts here.
   text += "@" + ::substrait::AggregationPhase_Name(function.phase());
@@ -736,10 +732,8 @@ void PlanConverter::visitPipelines(
     VISIT_MULTIPLE(kExtensionMulti, extension_multi);
     VISIT_LEAF(kExtensionLeaf, extension_leaf);
     VISIT_DOUBLE(kCross, cross);
-#if 0
     VISIT_DOUBLE(kHashJoin, hash_join);
     VISIT_DOUBLE(kMergeJoin, merge_join);
-#endif
     case ::substrait::Rel::REL_TYPE_NOT_SET:
     default:
       break;
