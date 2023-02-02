@@ -384,7 +384,9 @@ std::string PlanConverter::literalToText(
       return "interval_day_to_second(" +
           literal.interval_day_to_second().ShortDebugString() + ")";
     case ::substrait::Expression_Literal::kFixedChar:
+      return "\"" + literal.fixed_char() + "\""; // MEGAHACK -- Deal with escapes.
     case ::substrait::Expression_Literal::kVarChar:
+      return "\"" + literal.var_char().value() + "\""; // MEGAHACK -- Deal with escapes.
     case ::substrait::Expression_Literal::kFixedBinary:
     case ::substrait::Expression_Literal::kDecimal:
     case ::substrait::Expression_Literal::kStruct:
