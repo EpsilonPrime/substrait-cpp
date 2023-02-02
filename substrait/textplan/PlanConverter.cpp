@@ -2,6 +2,7 @@
 #include <iterator>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <google/protobuf/util/json_util.h>
@@ -44,7 +45,19 @@ std::string readFromFile(const std::string& msgPath) {
 }
 
 void PlanConverter::loadFromJSON(const std::string& json) {
-  auto status = google::protobuf::util::JsonStringToMessage(json, &plan_);
+  if (json.empty()) {
+    SUBSTRAIT_FAIL("Provided JSON string was empty.");
+  }
+  std::string_view usable_json = json;
+  if (json[0] == '#') {
+    int idx = 0;
+    while (idx < json.size() && json[idx] != '\n') {
+      idx++;
+    }
+    usable_json.remove_prefix(idx);
+  }
+  auto status =
+      google::protobuf::util::JsonStringToMessage(usable_json, &plan_);
   if (!status.ok()) {
     SUBSTRAIT_FAIL(
         "Failed to parse Substrait JSON: {}", status.message().ToString());
@@ -355,9 +368,34 @@ std::string PlanConverter::literalToText(
       return std::to_string(literal.fp32());
     case ::substrait::Expression::Literal::kFp64:
       return std::to_string(literal.fp64());
+    case ::substrait::Expression::Literal ::kDate:
+      return "date(" + std::to_string(literal.date()) +
+          ")"; // MEGAHACK -- Should we reformat this somehow?
     case ::substrait::Expression::Literal::kString:
       return "\"" + literal.string() + "\""; // MEGAHACK -- Deal with escapes.
-    default:
+    case ::substrait::Expression::Literal::LITERAL_TYPE_NOT_SET:
+      return "UNSPECIFIED_LITERAL_TYPE";
+    case ::substrait::Expression_Literal::kBinary:
+    case ::substrait::Expression_Literal::kTimestamp:
+    case ::substrait::Expression_Literal::kTime:
+    case ::substrait::Expression_Literal::kIntervalYearToMonth:
+    case ::substrait::Expression_Literal::kIntervalDayToSecond:
+      // MEGAHACK -- Do this in a more disciplined way.
+      return "interval_day_to_second(" +
+          literal.interval_day_to_second().ShortDebugString() + ")";
+    case ::substrait::Expression_Literal::kFixedChar:
+    case ::substrait::Expression_Literal::kVarChar:
+    case ::substrait::Expression_Literal::kFixedBinary:
+    case ::substrait::Expression_Literal::kDecimal:
+    case ::substrait::Expression_Literal::kStruct:
+    case ::substrait::Expression_Literal::kMap:
+    case ::substrait::Expression_Literal::kTimestampTz:
+    case ::substrait::Expression_Literal::kUuid:
+    case ::substrait::Expression_Literal::kNull:
+    case ::substrait::Expression_Literal::kList:
+    case ::substrait::Expression_Literal::kEmptyList:
+    case ::substrait::Expression_Literal::kEmptyMap:
+    case ::substrait::Expression_Literal::kUserDefined:
       return "UNSUPPORTED_LITERAL_TYPE";
   }
 };
@@ -418,6 +456,18 @@ std::string PlanConverter::typeToText(const ::substrait::Type& type) {
           ::substrait::Type::NULLABILITY_NULLABLE)
         return "opt_string";
       return "string";
+    case ::substrait::Type::kDecimal:
+      if (type.string().nullability() ==
+          ::substrait::Type::NULLABILITY_NULLABLE)
+        return "opt_decimal";
+      return "decimal";
+    case ::substrait::Type::kVarchar:
+      return "varchar";
+    case ::substrait::Type::kFixedChar:
+      return "fixedchar";
+    case ::substrait::Type::kDate:
+      return "date";
+    case ::substrait::Type::KIND_NOT_SET:
     default:
       return "UNSUPPORTED_TYPE";
   }
@@ -473,6 +523,15 @@ std::string PlanConverter::scalarFunctionToText(
   return text;
 };
 
+std::string PlanConverter::castToText(
+    const ::substrait::Expression::Cast& cast) {
+  std::string text;
+  text += expressionToText(cast.input());
+  text += " AS " + typeToText(cast.type());
+  // MEGAHACK -- Handle case.failure_behavior().
+  return text;
+}
+
 std::string PlanConverter::expressionToText(
     const ::substrait::Expression& exp) {
   std::string text;
@@ -486,11 +545,25 @@ std::string PlanConverter::expressionToText(
     case ::substrait::Expression::kScalarFunction:
       text += scalarFunctionToText(exp.scalar_function());
       break;
-    case ::substrait::Expression::REX_TYPE_NOT_SET:
-      break;
-    default:
+    case ::substrait::Expression::kWindowFunction:
+    case ::substrait::Expression::kIfThen:
+    case ::substrait::Expression::kSwitchExpression:
+    case ::substrait::Expression::kSingularOrList:
+    case ::substrait::Expression::kMultiOrList:
       text += "UNSUPPORTED_EXPRESSION_TYPE(" +
           std::to_string(exp.rex_type_case()) + ")";
+      break;
+    case ::substrait::Expression::kCast:
+      text += castToText(exp.cast());
+      break;
+    case ::substrait::Expression::kSubquery:
+    case ::substrait::Expression::kNested:
+    case ::substrait::Expression::kEnum:
+      text += "UNSUPPORTED_EXPRESSION_TYPE(" +
+          std::to_string(exp.rex_type_case()) + ")";
+      break;
+    case ::substrait::Expression::REX_TYPE_NOT_SET:
+      text += "EXPRESSION_TYPE_MISSING()";
       break;
   }
 
@@ -611,6 +684,64 @@ std::string PlanConverter::projectRelationToText(
   }
   return text;
 }
+std::string PlanConverter::fetchRelationToText(
+    const ::substrait::FetchRel& rel) {
+  std::string text;
+  if (rel.offset() != 0) {
+    text += "  offset " + std::to_string(rel.offset()) + ";\n";
+  }
+  text += "  count " + std::to_string(rel.count()) + ";\n";
+  return text;
+}
+std::string PlanConverter::sortRelationToText(const ::substrait::SortRel& rel) {
+  std::string text;
+  for (const auto& sort : rel.sorts()) {
+    text += "  sort " + expressionToText(sort.expr());
+    switch (sort.sort_kind_case()) {
+      case ::substrait::SortField::kDirection:
+        switch (sort.direction()) {
+          case ::substrait::
+              SortField_SortDirection_SORT_DIRECTION_ASC_NULLS_FIRST:
+            text += " by ASC_NULLS_FIRST";
+            break;
+          case ::substrait::
+              SortField_SortDirection_SORT_DIRECTION_ASC_NULLS_LAST:
+            text += " by ASC_NULLS_LAST";
+            break;
+          case ::substrait::
+              SortField_SortDirection_SORT_DIRECTION_DESC_NULLS_FIRST:
+            text += " by DESC_NULLS_FIRST";
+            break;
+          case ::substrait::
+              SortField_SortDirection_SORT_DIRECTION_DESC_NULLS_LAST:
+            text += " by DESC_NULLS_LAST";
+            break;
+          case ::substrait::SortField_SortDirection_SORT_DIRECTION_CLUSTERED:
+            text += " by CLUSTERED";
+            break;
+          case ::substrait::SortField_SortDirection_SORT_DIRECTION_UNSPECIFIED:
+          default:
+            break;
+        }
+        break;
+      case ::substrait::SortField::kComparisonFunctionReference: {
+        auto field = symbol_table_.nthSymbolByType(
+            sort.comparison_function_reference(), SymbolType::kFunction);
+        if (field != nullptr) {
+          return field->name;
+        } else {
+          return "functionref#" +
+              std::to_string(sort.comparison_function_reference());
+        }
+      }
+        break;
+      case ::substrait::SortField::SORT_KIND_NOT_SET:
+        break;
+    }
+    text += ";\n";
+  }
+  return text;
+}
 
 std::string PlanConverter::relationToText(const SymbolInfo& info) {
   if (!info.blob.has_value())
@@ -633,8 +764,24 @@ std::string PlanConverter::relationToText(const SymbolInfo& info) {
     case ::substrait::Rel::RelTypeCase::kProject:
       text += projectRelationToText(rel.project());
       break;
+    case ::substrait::Rel::kFetch:
+      text += fetchRelationToText(rel.fetch());
+      break;
+    case ::substrait::Rel::kSort:
+      text += sortRelationToText(rel.sort());
+      break;
+    case ::substrait::Rel::kJoin:
+    case ::substrait::Rel::kSet:
+    case ::substrait::Rel::kExtensionSingle:
+    case ::substrait::Rel::kExtensionMulti:
+    case ::substrait::Rel::kExtensionLeaf:
+    case ::substrait::Rel::kCross:
+    case ::substrait::Rel::kHashJoin:
+    case ::substrait::Rel::kMergeJoin:
+      text += "  UNSUPPORTED_RELATION_TYPE\n";
+      break;
     case ::substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET:
-    default:
+      text += "  UNSPECIFIED_RELATION_TYPE\n";
       break;
   }
 

@@ -107,6 +107,8 @@ class PlanConverter {
   std::string filterRelationToText(const ::substrait::FilterRel& rel);
   std::string aggregateRelationToText(const ::substrait::AggregateRel& rel);
   std::string projectRelationToText(const ::substrait::ProjectRel& rel);
+  std::string fetchRelationToText(const ::substrait::FetchRel& rel);
+  std::string sortRelationToText(const ::substrait::SortRel& rel);
   std::string relationToText(const SymbolInfo& info);
 
   std::string expressionToText(const ::substrait::Expression& exp);
@@ -119,6 +121,7 @@ class PlanConverter {
   static std::string typeToText(const ::substrait::Type& type);
   std::string scalarFunctionToText(
       const ::substrait::Expression::ScalarFunction& function);
+  std::string castToText(const ::substrait::Expression::Cast& cast);
 
   std::string extractLocalFile(
       const ::substrait::ReadRel::LocalFiles::FileOrFiles& item);
@@ -137,4 +140,4 @@ class PlanConverter {
       PipelineCollector* collector);
 };
 
-} // namespace substrait
+} // namespace io::substrait
