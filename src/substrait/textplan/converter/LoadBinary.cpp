@@ -86,4 +86,13 @@ PlanOrErrors loadFromText(const std::string& text) {
   return PlanOrErrors(plan);
 }
 
+PlanOrErrors loadFromBinary(const std::string& text) {
+  ::substrait::proto::Plan plan;
+  if (!plan.ParseFromString(text)) {
+    // TODO -- Improve this error.
+    return PlanOrErrors({"Something bad happened."});
+  }
+  return PlanOrErrors(plan);
+}
+
 } // namespace io::substrait::textplan

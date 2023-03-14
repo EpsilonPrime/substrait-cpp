@@ -4,7 +4,9 @@ set(TEXTPLAN_SRCS
         InitialPlanProtoVisitor.cpp InitialPlanProtoVisitor.h
         BasePlanProtoVisitor.cpp BasePlanProtoVisitor.h
         PlanPrinterVisitor.cpp PlanPrinterVisitor.h
-        LoadBinary.cpp LoadBinary.h ParseBinary.cpp ParseBinary.h)
+        LoadBinary.cpp LoadBinary.h
+        SaveBinary.cpp SaveBinary.h
+        ParseBinary.cpp ParseBinary.h)
 
 add_library(substrait_textplan_converter ${TEXTPLAN_SRCS})
 

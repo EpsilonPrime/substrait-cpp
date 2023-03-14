@@ -2,18 +2,12 @@
 
 #pragma once
 
-#include <string>
 #include <string_view>
-#include <variant>
 #include <vector>
 
 #include "substrait/proto/plan.pb.h"
 
-namespace substrait::proto {
-class Plan;
-}
-
-namespace io::substrait::textplan {
+namespace io::substrait {
 
 // PlanOrErrors behaves similarly to abseil::StatusOr.
 class PlanOrErrors {
@@ -40,21 +34,18 @@ class PlanOrErrors {
   std::vector<std::string> errors_;
 };
 
-// Read the contents of a file from disk.
-// Throws an exception if file cannot be read.
-std::string readFromFile(std::string_view msgPath);
+enum PlanFileEncoding {
+  BINARY = 0,
+  JSON = 1,
+  PROTOTEXT = 2,
+  // TODO -- Consider adding support for compressed binary files.
+};
 
-// Reads a plan from a json-encoded text proto.
+// Converts a plan in any format into a plan of the specified encoding type.
 // Returns a list of errors if the file cannot be parsed.
-PlanOrErrors loadFromJSON(std::string_view json);
+PlanOrErrors convertPlanFile(
+    std::string_view input_filename,
+    std::string_view output_filename,
+    PlanFileEncoding encoding);
 
-// Reads a plan encoded as a text protobuf.
-// Returns a list of errors if the file cannot be parsed.
-PlanOrErrors loadFromText(const std::string& text);
-
-// Reads a plan encoded as a binary protobuf.
-// Returns a list of errors if the file cannot be parsed.
-PlanOrErrors loadFromBinary(const std::string& text);
-
-
-} // namespace io::substrait::textplan
+} // namespace io::substrait
