@@ -20,5 +20,5 @@ target_link_libraries(
         substrait_proto)
 
 if(${SUBSTRAIT_CPP_BUILD_TESTING})
-  add_subdirectory(tests)
-endif()
+    add_subdirectory(tests)
+endif ()
