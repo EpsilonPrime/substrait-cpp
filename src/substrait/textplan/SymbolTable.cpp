@@ -8,7 +8,9 @@
 #include <string>
 
 #include "substrait/common/Exceptions.h"
+#include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"
+#include "substrait/textplan/StructuredSymbolData.h"
 
 namespace io::substrait::textplan {
 
@@ -160,6 +162,31 @@ SymbolTableIterator SymbolTable::begin() const {
 
 SymbolTableIterator SymbolTable::end() const {
   return {this, symbols_.size()};
+}
+
+std::string SymbolTable::toDebugString() const {
+  std::stringstream result;
+  bool textAlreadyWritten = false;
+  int32_t relationCount = 0;
+  for (const auto& info : symbolsByName_) {
+    if (symbols_[info.second]->type != SymbolType::kRelation) {
+      continue;
+    }
+    auto relationData =
+        ANY_CAST(std::shared_ptr<RelationData>, symbols_[info.second]->blob);
+    result << std::left << std::setw(4) << relationCount++;
+    result << std::left << std::setw(20) << info.first << std::endl;
+    int32_t fieldNum = 0;
+    for (const auto& field : relationData->fieldReferences) {
+      result << "    " << std::setw(4) << fieldNum++;
+      result << "  " << field->name << std::endl;
+    }
+    textAlreadyWritten = true;
+  }
+  if (textAlreadyWritten) {
+    result << std::endl;
+  }
+  return result.str();
 }
 
 } // namespace io::substrait::textplan

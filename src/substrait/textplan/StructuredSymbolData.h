@@ -37,6 +37,8 @@ struct RelationData {
   // Column name for each field known to this relation (in field order).  Used
   // to determine what fields are coming in as well and fields are going out.
   std::vector<const SymbolInfo*> fieldReferences;
+
+  std::vector<const SymbolInfo*> outputFieldReferences;
 };
 
 // Used by Schema symbols to keep track of assigned values.

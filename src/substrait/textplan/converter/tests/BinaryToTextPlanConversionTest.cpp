@@ -577,12 +577,14 @@ INSTANTIATE_TEST_SUITE_P(
 
 class BinaryToTextPlanConversionTest : public ::testing::Test {};
 
-TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
+TEST_F(BinaryToTextPlanConversionTest, FullSample) {
   std::string json = readFromFile("data/q6_first_stage.json");
   auto planOrError = loadFromJson(json);
   ASSERT_TRUE(planOrError.ok());
   auto plan = *planOrError;
   EXPECT_THAT(plan.extensions_size(), ::testing::Eq(7));
+
+  std::string expectedOutput = readFromFile("data/q6_first_stage.golden.splan");
 
   auto result = parseBinaryPlan(plan);
   auto symbols = result.getSymbolTable().getSymbols();
@@ -616,7 +618,9 @@ TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
                   SymbolType::kRelation,
                   SymbolType::kSource,
                   SymbolType::kSchema,
-              })));
+              }),
+          WhenSerialized(EqSquashingWhitespace(expectedOutput))))
+      << result.getSymbolTable().toDebugString();
 }
 
 } // namespace

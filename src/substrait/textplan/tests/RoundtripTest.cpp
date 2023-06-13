@@ -11,7 +11,6 @@
 #include <protobuf-matchers/protocol-buffer-matchers.h>
 
 #include "absl/strings/str_split.h"
-#include "gmock/gmock.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"

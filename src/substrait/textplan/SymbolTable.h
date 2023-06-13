@@ -176,6 +176,8 @@ class SymbolTable {
     return os;
   }
 
+  [[nodiscard]] std::string toDebugString() const;
+
  private:
   // Returns the table size if the symbol is not found.
   size_t findSymbolIndex(const SymbolInfo& symbol);

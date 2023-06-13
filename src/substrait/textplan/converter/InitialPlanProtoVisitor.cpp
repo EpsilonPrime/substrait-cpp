@@ -78,6 +78,46 @@ void eraseInputs(::substrait::proto::Rel* relation) {
   }
 }
 
+::google::protobuf::RepeatedField<int32_t> getOutputMapping(
+    const ::substrait::proto::Rel& relation) {
+  switch (relation.rel_type_case()) {
+    case ::substrait::proto::Rel::kRead:
+      return relation.read().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kFilter:
+      return relation.filter().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kFetch:
+      return relation.fetch().common().emit().output_mapping();
+      ;
+    case ::substrait::proto::Rel::kAggregate:
+      return relation.aggregate().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kSort:
+      return relation.sort().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kJoin:
+      return relation.join().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kProject:
+      return relation.project().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kSet:
+      return relation.sort().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kExtensionSingle:
+      return relation.extension_single().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kExtensionMulti:
+      return relation.extension_multi().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kExtensionLeaf:
+      return relation.extension_leaf().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kCross:
+      return relation.cross().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kHashJoin:
+      return relation.hash_join().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kMergeJoin:
+      return relation.merge_join().common().emit().output_mapping();
+    case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
+      break;
+  }
+
+  // The compiler will prevent us from reaching here.
+  return {};
+}
+
 } // namespace
 
 std::any InitialPlanProtoVisitor::visitExtension(
@@ -273,8 +313,14 @@ void InitialPlanProtoVisitor::addFieldsToRelation(
   }
   auto symbolRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
-  for (const auto& field : symbolRelationData->fieldReferences) {
-    relationData->fieldReferences.push_back(field);
+  if (!symbolRelationData->outputFieldReferences.empty()) {
+    for (const auto& field : symbolRelationData->outputFieldReferences) {
+      relationData->fieldReferences.push_back(field);
+    }
+  } else {
+    for (const auto& field : symbolRelationData->fieldReferences) {
+      relationData->fieldReferences.push_back(field);
+    }
   }
 }
 
@@ -322,9 +368,30 @@ void InitialPlanProtoVisitor::updateLocalSchema(
       addFieldsToRelation(
           relationData, relation.join().left(), relation.join().right());
       break;
-    case ::substrait::proto::Rel::RelTypeCase::kProject:
+    case ::substrait::proto::Rel::RelTypeCase::kProject: {
       addFieldsToRelation(relationData, relation.project().input());
+#if 1
+      bool allDirect = !relation.project().expressions().empty();
+      for (const auto& expr : relation.project().expressions()) {
+        if (!expr.selection().has_direct_reference()) {
+          allDirect = false;
+        }
+      }
+      if (allDirect) {
+        for (const auto& expr : relation.project().expressions()) {
+          auto mapping =
+              expr.selection().direct_reference().struct_field().field();
+          if (mapping < relationData->fieldReferences.size()) {
+            relationData->outputFieldReferences.push_back(
+                relationData->fieldReferences[mapping]);
+          } else {
+            // MEGAHACK -- Raise an error for this failed mapping.
+          }
+        }
+      }
+#endif
       break;
+    }
     case ::substrait::proto::Rel::RelTypeCase::kSet:
       addFieldsToRelation(relationData, relation.set().inputs());
       break;
@@ -356,8 +423,19 @@ void InitialPlanProtoVisitor::updateLocalSchema(
     case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
       break;
   }
-  // TODO -- Utilize the data in relation.common().emit() to alter the order
-  // of the fields that leave this relation.
+
+  // Revamp the output based on the output mapping if present.
+  auto mapping = getOutputMapping(relation);
+  if (!mapping.empty()) {
+    for (auto item : mapping) {
+      if (item < relationData->fieldReferences.size()) {
+        relationData->outputFieldReferences.push_back(
+            relationData->fieldReferences[item]);
+      } else {
+        // MEGAHACK -- Raise an error.
+      }
+    }
+  }
 }
 
 } // namespace io::substrait::textplan
