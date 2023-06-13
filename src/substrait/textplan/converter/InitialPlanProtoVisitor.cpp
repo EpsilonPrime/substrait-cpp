@@ -19,6 +19,8 @@ namespace io::substrait::textplan {
 
 namespace {
 
+const std::string kIntermediateNodeName = "intermediate";
+
 std::string shortName(std::string str) {
   auto loc = str.find(':');
   if (loc != std::string::npos) {
@@ -345,7 +347,7 @@ void InitialPlanProtoVisitor::updateLocalSchema(
                 name,
                 PROTO_LOCATION(relation.read().base_schema()),
                 SymbolType::kField,
-                std::nullopt,
+                SourceType::kUnknown,
                 std::nullopt);
           }
           relationData->fieldReferences.emplace_back(symbol);
@@ -370,26 +372,30 @@ void InitialPlanProtoVisitor::updateLocalSchema(
       break;
     case ::substrait::proto::Rel::RelTypeCase::kProject: {
       addFieldsToRelation(relationData, relation.project().input());
-#if 1
-      bool allDirect = !relation.project().expressions().empty();
       for (const auto& expr : relation.project().expressions()) {
-        if (!expr.selection().has_direct_reference()) {
-          allDirect = false;
-        }
-      }
-      if (allDirect) {
-        for (const auto& expr : relation.project().expressions()) {
+        // MEGAHACK -- Handle other kinds of direct references.
+        if (expr.selection().has_direct_reference() &&
+            expr.selection().direct_reference().has_struct_field()) {
           auto mapping =
               expr.selection().direct_reference().struct_field().field();
           if (mapping < relationData->fieldReferences.size()) {
             relationData->outputFieldReferences.push_back(
                 relationData->fieldReferences[mapping]);
           } else {
-            // MEGAHACK -- Raise an error for this failed mapping.
+            // MEGAHACK - Emit error.
           }
+        } else {
+          const auto& uniqueName =
+              symbolTable_->getUniqueName(kIntermediateNodeName);
+          auto newSymbol = symbolTable_->defineSymbol(
+              uniqueName,
+              PROTO_LOCATION(relation.project()),
+              SymbolType::kUnknown,
+              std::nullopt,
+              std::nullopt);
+          relationData->outputFieldReferences.push_back(newSymbol);
         }
       }
-#endif
       break;
     }
     case ::substrait::proto::Rel::RelTypeCase::kSet:

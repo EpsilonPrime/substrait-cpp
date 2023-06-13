@@ -62,7 +62,9 @@
       "input": {
        "project": {
         "common": {
-         "direct": {}
+         "emit": {
+          "outputMapping": [4, 5]
+         }
         },
         "input": {
          "filter": {
