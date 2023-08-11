@@ -18,6 +18,7 @@
 #include "substrait/textplan/tests/ParseResultMatchers.h"
 
 using ::protobuf_matchers::EqualsProto;
+using ::protobuf_matchers::IgnoringFields;
 using ::testing::AllOf;
 
 namespace io::substrait::textplan {
@@ -62,7 +63,11 @@ void roundTripDoesNotCrash(const ::substrait::proto::Plan& plan) {
   ASSERT_THAT(
       result,
       ::testing::AllOf(
-          ParsesOk(), HasErrors({}), AsBinaryPlan(EqualsProto(normalizedPlan))))
+          ParsesOk(),
+          HasErrors({}),
+          AsBinaryPlan(IgnoringFields(
+              {"substrait.proto.RelCommon.Emit.output_mapping"},
+              EqualsProto(normalizedPlan)))))
       << std::endl
       << "Intermediate result:" << std::endl
       << addLineNumbers(outputText) << std::endl

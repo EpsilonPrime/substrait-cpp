@@ -17,7 +17,7 @@ include(GoogleTest)
 
 
 option(SUBSTRAIT_CPP_FUZZTEST_TESTING
-       "Enable substrait-cpp textplan fuzztest tests." OFF)
+       "Enable substrait-cpp textplan fuzztest tests." ON)
 
 if(${SUBSTRAIT_CPP_FUZZTEST_TESTING})
   fuzztest_setup_fuzzing_flags()
@@ -35,9 +35,6 @@ if(${SUBSTRAIT_CPP_FUZZTEST_TESTING})
           parse_result_matchers
           protobuf-matchers
           fmt::fmt-header-only
-          #gmock
-          #gtest
-          #gtest_main
   )
 
   link_fuzztest(substrait_textplan_fuzz_test)
