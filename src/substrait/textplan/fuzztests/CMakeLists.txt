@@ -7,8 +7,9 @@ message("Building fuzztest at branch " ${FUZZTEST_REPO_BRANCH})
 
 FetchContent_Declare(
         fuzztest
-        GIT_REPOSITORY  https://github.com/google/fuzztest.git
-        GIT_TAG         ${FUZZTEST_REPO_BRANCH}
+        #GIT_REPOSITORY  https://github.com/google/fuzztest.git
+        #GIT_TAG         ${FUZZTEST_REPO_BRANCH}
+        SOURCE_DIR        "${CMAKE_CURRENT_LIST_DIR}/../../../../third_party/fuzztest/"
 )
 FetchContent_MakeAvailable(fuzztest)
 

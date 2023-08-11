@@ -41,7 +41,7 @@ std::string addLineNumbers(const std::string& text) {
   return newPlan;
 }
 
-void roundTripDoesNotCrash(const ::substrait::proto::Plan& plan) {
+void RoundTripDoesNotCrash(const ::substrait::proto::Plan& plan) {
   auto textResult = parseBinaryPlan(plan);
   auto textSymbols = textResult.getSymbolTable().getSymbols();
 
@@ -76,10 +76,10 @@ void roundTripDoesNotCrash(const ::substrait::proto::Plan& plan) {
 
 TEST(FuzzTestSuite, EmptyPlanDoesNotCrash) {
   ::substrait::proto::Plan plan;
-  roundTripDoesNotCrash(plan);
+  RoundTripDoesNotCrash(plan);
 }
 
-FUZZ_TEST(FuzzTestSuite, roundTripDoesNotCrash);
+FUZZ_TEST(FuzzTestSuite, RoundTripDoesNotCrash);
 
 } // namespace
 } // namespace io::substrait::textplan
