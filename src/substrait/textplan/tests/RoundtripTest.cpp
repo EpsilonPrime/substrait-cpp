@@ -20,7 +20,6 @@
 
 using ::protobuf_matchers::EqualsProto;
 using ::protobuf_matchers::IgnoringFields;
-using ::protobuf_matchers::Partially;
 using ::testing::AllOf;
 
 namespace io::substrait::textplan {
@@ -119,8 +118,7 @@ INSTANTIATE_TEST_SUITE_P(
       if (lastSlash != std::string::npos) {
         identifier = identifier.substr(lastSlash);
       }
-      if (identifier.length() > 5 &&
-          identifier.substr(identifier.length() - 5) == ".json") {
+      if (endsWith(identifier, ".json")) {
         identifier = identifier.substr(0, identifier.length() - 5);
       }
 
