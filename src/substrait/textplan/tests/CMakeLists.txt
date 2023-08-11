@@ -24,7 +24,7 @@ option(SUBSTRAIT_CPP_ROUNDTRIP_TESTING
 
 if(${SUBSTRAIT_CPP_ROUNDTRIP_TESTING})
   add_test_case(
-    round_trip_test
+    substrait_textplan_round_trip_test
     SOURCES
     RoundtripTest.cpp
     EXTRA_LINK_LIBS
@@ -43,7 +43,7 @@ if(${SUBSTRAIT_CPP_ROUNDTRIP_TESTING})
   cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH TEXTPLAN_SOURCE_DIR)
 
   add_custom_command(
-    TARGET round_trip_test
+    TARGET substrait_textplan_round_trip_test
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "Copying unit test data.."
     COMMAND ${CMAKE_COMMAND} -E make_directory

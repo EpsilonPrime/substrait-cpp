@@ -32,4 +32,5 @@ target_include_directories(symbol_table
 
 if(${SUBSTRAIT_CPP_BUILD_TESTING})
   add_subdirectory(tests)
+  add_subdirectory(fuzztests)
 endif()

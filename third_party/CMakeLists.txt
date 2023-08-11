@@ -9,7 +9,12 @@ set(BUILD_TZ_LIB ON)
 add_subdirectory(datetime)
 
 add_subdirectory(fmt)
-add_subdirectory(googletest)
+
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/googletest/"
+)
 
 add_subdirectory(protobuf-matchers)
 
