@@ -1,25 +1,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
-include(FetchContent)
-
-set(FUZZTEST_REPO_BRANCH "origin/main" CACHE STRING "FuzzTest repository branch.")
-message("Building fuzztest from branch " ${FUZZTEST_REPO_BRANCH})
-
-FetchContent_Declare(
-        fuzztest
-        SOURCE_DIR        "${CMAKE_CURRENT_LIST_DIR}/../../../../third_party/fuzztest/"
-)
-FetchContent_MakeAvailable(fuzztest)
-
-enable_testing()
-include(GoogleTest)
-
-
 option(SUBSTRAIT_CPP_FUZZTEST_TESTING
        "Enable substrait-cpp textplan fuzztest tests." ON)
 
 if(${SUBSTRAIT_CPP_FUZZTEST_TESTING})
+  cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH TEXTPLAN_SOURCE_DIR)
+  cmake_path(GET TEXTPLAN_SOURCE_DIR PARENT_PATH SUBSTRAIT_SOURCE_DIR)
+  cmake_path(GET SUBSTRAIT_SOURCE_DIR PARENT_PATH SRC_SOURCE_DIR)
+  cmake_path(GET SRC_SOURCE_DIR PARENT_PATH TOPLEVEL_SOURCE_DIR)
+
+  include(${TOPLEVEL_SOURCE_DIR}/third_party/fuzztest.cmake)
+
   fuzztest_setup_fuzzing_flags()
+
+  # MEGAHACK -- These are probably unnecessary as they were requested in fuzztest.cmake.
+  add_compile_options(-fsanitize-ignorelist=${TOPLEVEL_SOURCE_DIR}/sanitize-ignore-list.txt)
+  add_link_options(-fsanitize-ignorelist=${TOPLEVEL_SOURCE_DIR}/sanitize-ignore-list.txt)
 
   add_test_case(
           substrait_textplan_fuzz_test

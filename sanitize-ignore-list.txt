@@ -1,4 +1,5 @@
-type:*HashSetIteratorGenerationInfoEnabled*
-type:absl::container_internal::GenerationType
-src:*absl/container/internal/raw_hash_set.h
+fun:*HashSetIteratorGenerationInfoEnabled*
+fun:*fuzztest::internal*
+src:*/raw_hash_set.h
 src:raw_hash_set.h
+fun:*find_first_non_full*

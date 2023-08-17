@@ -79,7 +79,9 @@ TEST(FuzzTestSuite, EmptyPlanDoesNotCrash) {
   RoundTripDoesNotCrash(plan);
 }
 
-FUZZ_TEST(FuzzTestSuite, RoundTripDoesNotCrash);
+FUZZ_TEST(FuzzTestSuite, RoundTripDoesNotCrash)
+    .WithDomains(::fuzztest::Arbitrary<::substrait::proto::Plan>()
+                     .WithFieldsAlwaysSet());
 
 } // namespace
 } // namespace io::substrait::textplan

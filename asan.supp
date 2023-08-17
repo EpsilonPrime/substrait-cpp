@@ -1,4 +1,5 @@
 interceptor_via_fun:absl::container_internal::HashSetIteratorGenerationInfoEnabled::HashSetIteratorGenerationInfoEnabled
+interceptor_via_fun:absl::container_internal::HashSetIteratorGenerationInfoEnabled::HashSetIteratorGenerationInfoEnabled(unsigned char const*)
 interceptor_via_fun:-[HashSetIteratorGenerationInfoEnabled:]
 #fun:HashSetIteratorGenerationInfoEnabled
 #type:absl::container_internal::GenerationType

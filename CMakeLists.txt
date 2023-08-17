@@ -11,20 +11,20 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-add_compile_options(-fsanitize=undefined)
-add_link_options(-fsanitize=undefined)
+#if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+#add_compile_options(-fsanitize=undefined)
+#add_link_options(-fsanitize=undefined)
 
-add_compile_options(-fsanitize-undefined-strip-path-components=-4)
-set(ENV{UBSAN_OPTIONS} suppressions=${CMAKE_CURRENT_SOURCE_DIR}/ubsan.supp)
-set(ENV{ASAN_OPTIONS} suppressions=${CMAKE_CURRENT_SOURCE_DIR}/asan.supp)
+#add_compile_options(-fsanitize-undefined-strip-path-components=-4)
+#set(ENV{UBSAN_OPTIONS} suppressions=${CMAKE_CURRENT_SOURCE_DIR}/ubsan.supp)
+#set(ENV{ASAN_OPTIONS} suppressions=${CMAKE_CURRENT_SOURCE_DIR}/asan.supp)
 
-add_compile_options(-fsanitize=address)
-add_link_options(-fsanitize=address)
+#add_compile_options(-fsanitize=address)
+#add_link_options(-fsanitize=address)
 
-add_compile_options(-fsanitize-ignorelist=${CMAKE_CURRENT_SOURCE_DIR}/sanitize-ignore-list.txt)
-add_link_options(-fsanitize-ignorelist=${CMAKE_CURRENT_SOURCE_DIR}/sanitize-ignore-list.txt)
-endif()
+#add_compile_options(-fsanitize-ignorelist=${CMAKE_CURRENT_SOURCE_DIR}/sanitize-ignore-list.txt)
+#add_link_options(-fsanitize-ignorelist=${CMAKE_CURRENT_SOURCE_DIR}/sanitize-ignore-list.txt)
+#endif()
 
 option(
   SUBSTRAIT_CPP_BUILD_TESTING
