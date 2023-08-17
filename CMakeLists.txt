@@ -14,8 +14,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_compile_options($<$<CONFIG:Debug>:-fsanitize=undefined>)
 add_link_options($<$<CONFIG:Debug>:-fsanitize=undefined>)
 
+add_compile_options($<$<CONFIG:Debug>:-fsanitize-undefined-strip-path-components=-4>)
+set(ENV{UBSAN_OPTIONS=suppressions} ${CMAKE_CURRENT_SOURCE_DIR}/sanitize-ignore-list.txt)
+
 add_compile_options($<$<CONFIG:Debug>:-fsanitize=address>)
 add_link_options($<$<CONFIG:Debug>:-fsanitize=address>)
+
+add_compile_options($<$<CONFIG:Debug>:-fsanitize-ignorelist=${CMAKE_CURRENT_SOURCE_DIR}/sanitize-ignore-list.txt>)
+add_link_options($<$<CONFIG:Debug>:-fsanitize-ignorelist=${CMAKE_CURRENT_SOURCE_DIR}/sanitize-ignore-list.txt>)
 
 option(
   SUBSTRAIT_CPP_BUILD_TESTING

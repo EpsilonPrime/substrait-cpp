@@ -1,0 +1,2 @@
+type:*HashSetIteratorGenerationInfoEnabled*
+type:absl::container_internal::GenerationType
