@@ -1,0 +1,5 @@
+interceptor_via_fun:absl::container_internal::HashSetIteratorGenerationInfoEnabled::HashSetIteratorGenerationInfoEnabled
+interceptor_via_fun:-[HashSetIteratorGenerationInfoEnabled:]
+#fun:HashSetIteratorGenerationInfoEnabled
+#type:absl::container_internal::GenerationType
+interceptor_via_lib:fuzztest_gtest_main

@@ -1,1 +1,2 @@
-undefined-behavior=*absl/container/internal/raw_hash_set.h
+undefined-behavior=absl/container/internal/raw_hash_set.h
+undefined-behavior=*HashSetIteratorGenerationInfoEnabled*

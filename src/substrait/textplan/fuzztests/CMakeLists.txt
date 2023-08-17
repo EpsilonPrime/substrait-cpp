@@ -3,7 +3,7 @@
 include(FetchContent)
 
 set(FUZZTEST_REPO_BRANCH "origin/main" CACHE STRING "FuzzTest repository branch.")
-message("Building fuzztest at branch " ${FUZZTEST_REPO_BRANCH})
+message("Building fuzztest from branch " ${FUZZTEST_REPO_BRANCH})
 
 FetchContent_Declare(
         fuzztest

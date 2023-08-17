@@ -1,2 +1,4 @@
 type:*HashSetIteratorGenerationInfoEnabled*
 type:absl::container_internal::GenerationType
+src:*absl/container/internal/raw_hash_set.h
+src:raw_hash_set.h

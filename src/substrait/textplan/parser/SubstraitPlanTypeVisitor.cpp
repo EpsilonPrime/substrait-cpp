@@ -115,12 +115,7 @@ std::any SubstraitPlanTypeVisitor::visitLiteral_complex_type(
       }
       try {
         if (!varChar->length()->isInteger()) {
-<<<<<<< HEAD
           errorListener_->addError(ctx->getStart(), "Missing varchar length.");
-=======
-          errorListener_->addError(
-              ctx->getStart(), "Missing varchar length.");
->>>>>>> d3abea7 (Fix an issues processing varchar types.)
           break;
         }
         int32_t length = std::stoi(varChar->length()->value());
