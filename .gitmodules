@@ -19,3 +19,6 @@
 [submodule "third_party/protobuf-matchers"]
 	path = third_party/protobuf-matchers
 	url = https://github.com/EpsilonPrime/protobuf-matchers.git
+[submodule "third_party/jni.hpp"]
+	path = third_party/jni.hpp
+	url = git@github.com:mapbox/jni.hpp.git
