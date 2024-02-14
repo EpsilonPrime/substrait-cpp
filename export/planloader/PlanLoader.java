@@ -16,16 +16,26 @@ class PlanLoader {
         }
     }
 
-    public native byte[] loadSubstraitPlan(String filename);
-    public native void saveSubstraitPlan(byte[] planData, String filename, int format);
+    private native byte[] loadSubstraitPlan(String filename);
+    private native void saveSubstraitPlan(byte[] planData, String filename, int format);
 
-    // MEGAHACK -- Add conversion from Plan to byte[].
+    // MEGAHACK -- Document including the fact that it throws an exception.
+    public byte[] loadPlan(String filename) {
+      // MEGAHACK -- Add conversion from byte[] to Plan.
+      return loadSubstraitPlan(filename);
+    }
+
+    // MEGAHACK -- Document including the fact that it throws an exception.
+    public void savePlan(byte[] planData, String filename, PlanFileFormat format) {
+      // MEGAHACK -- Add conversion from Plan to byte[].
+      return saveSubstraitPlan(planData, filename, format.getValue());
+    }
 }
 
 public class Hello {
     public static void main(String[] args) {
         System.loadLibrary("planloader_jni");
-        byte[] planData = PlanLoader().loadSubstraitPlan("myplan.json");
-        saveSubstraitPlan(planData, "output.splan", 3);
+        byte[] planData = PlanLoader().loadPlan("myplan.json");
+        savePlan(planData, "output.splan", PlanLoader.PlanFileFormat.TEXT);
     }
 }

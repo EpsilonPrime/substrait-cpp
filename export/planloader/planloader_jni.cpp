@@ -2,6 +2,7 @@
 
 #include <jni/jni.hpp>
 
+#include <substrait/textplan/finally.h>
 #include "planloader.h"
 
 class PlanLoaderException : public std::exception {
@@ -29,12 +30,14 @@ static void RegisterPlanLoader(JavaVM* vm) {
       [](jni::JNIEnv& env, jni::Object<PlanLoader>&, jni::String& filename) {
         auto str = jni::Make<std::string>(env, filename);
         auto result = load_substrait_plan(str.c_str());
-        auto freeResult = [&result]() { free_substrait_plan(result); };
+        auto freeResult = io::substrait::textplan::finally(
+            [&]() { free_substrait_plan(result); });
         if (*result->error_message) {
           throw PlanLoaderException(result->error_message);
         }
         // MEGAHACK -- Extract the plan from the result and prepare to return
         // it.
+        //return jni::Make<jni::Array<jni::Byte>>(env, result->buffer, result->size);
         return jni::Make<jni::String>(env, u"hello");
       };
 

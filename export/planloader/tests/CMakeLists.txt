@@ -33,12 +33,12 @@ message(
 )
 
 add_test_case(
-        planloader_jni_test
-        SOURCES
-        PlanLoaderTest.cpp
-        EXTRA_LINK_LIBS
-        planloader_jni
-        planloader
-        gmock
-        gtest
-        gtest_main)
+  planloader_jni_test
+  SOURCES
+  PlanLoaderTest.cpp
+  EXTRA_LINK_LIBS
+  planloader_jni
+  planloader
+  gmock
+  gtest
+  gtest_main)
