@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "substrait/common/Io.h"
+#include "substrait/textplan/converter/ParseBinary.h"
 
 namespace io::substrait {
 namespace {
@@ -32,7 +33,7 @@ PlanFileFormat planFileFormatFromText(std::string_view str) {
 int main(int argc, char* argv[]) {
   if (argc <= 3) {
     printf(
-        "Usage:  plantransformer <inputfilename> <outputfilename> [BINARY|JSON|PROTOTEXT|TEXT]\n");
+        "Usage:  plantransformer <inputfilename> <outputfilename> [BINARY|JSON|PROTOTEXT|TEXT|DEBUG]\n");
     return EXIT_FAILURE;
   }
 
@@ -43,6 +44,12 @@ int main(int argc, char* argv[]) {
   }
 
   auto format = io::substrait::planFileFormatFromText(argv[3]);
+
+  if (strcmp(argv[3], "DEBUG") == 0) {
+    auto parsedResult = io::substrait::textplan::parseBinaryPlan(*planOrError);
+    std::cout << parsedResult.getSymbolTable().toDebugString();
+    return EXIT_SUCCESS;
+  }
 
   auto result = io::substrait::savePlan(*planOrError, argv[2], format);
   if (!result.ok()) {
